@@ -1,5 +1,5 @@
 /*
- * som1ee - Simple example to read EEPROM on SOM1-EK using shared object.  
+ * som1ee - Simple shared object example to read EEPROM on SOM1-EK.  
  * 
  * Copyright 2019 Microchip
  * 		  Matt Wood <matt.wood@microchip.com>
@@ -18,16 +18,33 @@
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <getopt.h>
+#include <assert.h>
+#include <errno.h>
 #include "libsom1ee.h"
 
-int main(int argc, char **argv)
+unsigned char buf[32];
+
+unsigned char* getBrdInfo(void)
 {
-    unsigned char *brdInfo;
 
-    brdInfo = getBrdInfo();
+    char *eeprom = "/sys/bus/i2c/devices/3-0050/eeprom";
+	FILE *fp;
+	int ret;
 
-	printf("Board info: %s\r\n", brdInfo);
+	fp = fopen(eeprom, "r");
+    if (fp != NULL) {
+        ret = fseek(fp, EE_DATA_OFFSET, SEEK_SET);
+        if (ret) {
+            printf("Cannot set offset of EEPROM\r\n");
+            return NULL;
+        }
 
-	return 0;
+        ret = fread(buf, 1, 32, fp);
+
+        return (unsigned char *)&buf;    
+    }
+    return NULL;
 }
-
